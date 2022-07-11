@@ -4,15 +4,16 @@ const format = require("date-fns/format");
 const AWS = require("aws-sdk");
 const fetch = require("node-fetch");
 const { v4: uuidv4 } = require("uuid");
-const { StatusCodes } = require("http-status-codes");
 
 const s3Client = new AWS.S3();
 
+const puppeteerConfig = {
+    // headless: false,
+    // slowMo: 250
+};
+
 (async () => {
-    const browser = await puppeteer.launch({
-        // headless: false,
-        // slowMo: 250
-    });
+    const browser = await puppeteer.launch(puppeteerConfig);
 
     const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
     const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
@@ -26,59 +27,61 @@ const s3Client = new AWS.S3();
             ...data,
             prevContent: contentHash
         };
-        if (data.prevContent !== contentHash) {
-            console.log("Detected updates");
-            const fileName = `${format(now, "yyyy-MM-dd'T'HH:mm:ssa")}.pdf`;
-            const pdf = await page.pdf({ format: "a4" });
-
-            const putParams = {
-                ACL: "public-read",
-                Body: pdf,
-                Bucket: config.awsBucketName,
-                Key: fileName,
-                ContentType: "application/pdf"
-            };
-            s3Client.putObject(putParams, (err, _) => {
-                if (err) {
-                    throw err;
-                }
-            });
-            const pdfUrl = `https://${config.awsBucketName}.s3.ap-northeast-1.amazonaws.com/${fileName}`;
-            const body1 = {
-                "messages": [
-                    {
-                        "type": "text",
-                        "text": `新しいキャンセル情報が見つかりました。
-                        URL: ${config.url}
-                        pdf: ${pdfUrl}`
-                    }
-                ]
-            }
-            const header1 = {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + config.line.channelAccessToken,
-                "X-Line-Retry-Key": uuidv4()
-            };
-            const response = await fetch("https://api.line.me/v2/bot/message/broadcast", {
-                method: 'post',
-                body: JSON.stringify(body1),
-                headers: header1
-            });
-            if (response.ok) {
-                console.log("Successfully sent a message to LINE");
-            } else {
-                console.log(`Failed to send a message to LINE.  status: ${response.status} ${JSON.stringify(response.json())}`);
-                return;
-            }
-            console.log(pdfUrl);
+        if (data.prevContent === contentHash) {
+            console.log("No update is detected.  Shutdown the task");
+            return;
         }
+        const fileName = `${format(now, "yyyy-MM-dd'T'HH:mm:ssa")}.pdf`;
+        const pdf = await page.pdf({ format: "a4" });
+        const pdfUrl = `https://${config.awsBucketName}.s3.ap-northeast-1.amazonaws.com/${fileName}`;
+        putPdfInS3(fileName, pdf);
+        sendMessageToLine(pdfUrl);
         fs.writeFileSync("data.json", JSON.stringify(newData, null, 2));
+        console.log("Update was detected and notified LINE account.");
     } catch (err) {
         console.log(err);
     } finally {
         await browser.close();
     }
 })();
+
+function putPdfInS3(fileName, pdf) {
+    const putParams = {
+        ACL: "public-read",
+        Body: pdf,
+        Bucket: config.awsBucketName,
+        Key: fileName,
+        ContentType: "application/pdf"
+    };
+    s3Client.putObject(putParams);
+}
+
+function sendMessageToLine(pdfUrl) {
+    const body = {
+        "messages": [
+            {
+                "type": "text",
+                "text": `新しいキャンセル情報が見つかりました。\nURL: ${config.url}\npdf: ${pdfUrl}`
+            }
+        ]
+    };
+    const header = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + config.line.channelAccessToken,
+        "X-Line-Retry-Key": uuidv4()
+    };
+    const response = await fetch("https://api.line.me/v2/bot/message/broadcast", {
+        method: 'post',
+        body: JSON.stringify(body),
+        headers: header
+    });
+    if (response.ok) {
+        console.log("Successfully a message is sent to LINE");
+        return;
+    } else {
+        throw Error(`Failed to send a message to LINE.  status: ${response.status} ${JSON.stringify(response.json())}`);
+    }
+}
 
 async function contentHashPageFunction() {
     // Define the function inside the page function so that the browser can use this function.
