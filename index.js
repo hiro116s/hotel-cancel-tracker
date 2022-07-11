@@ -56,7 +56,7 @@ function putPdfInS3(fileName, pdf) {
     s3Client.putObject(putParams);
 }
 
-function sendMessageToLine(pdfUrl) {
+async function sendMessageToLine(pdfUrl) {
     const body = {
         "messages": [
             {
