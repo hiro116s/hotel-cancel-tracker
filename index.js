@@ -12,11 +12,11 @@ const puppeteerConfig = {
     // slowMo: 250
 };
 
+const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
+const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
+
 (async () => {
     const browser = await puppeteer.launch(puppeteerConfig);
-
-    const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
-    const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
 
     const page = await browser.newPage();
     const now = new Date();
