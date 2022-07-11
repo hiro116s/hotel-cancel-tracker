@@ -34,8 +34,8 @@ const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
         const fileName = `${format(now, "yyyy-MM-dd'T'HH:mm:ssa")}.pdf`;
         const pdf = await page.pdf({ format: "a4" });
         const pdfUrl = `https://${config.awsBucketName}.s3.ap-northeast-1.amazonaws.com/${fileName}`;
-        putPdfInS3(fileName, pdf);
-        sendMessageToLine(pdfUrl);
+        putPdfInS3(pdf, fileName);
+        await sendMessageToLine(pdfUrl);
         fs.writeFileSync("data.json", JSON.stringify(newData, null, 2));
         console.log("Update was detected and notified LINE account.");
     } catch (err) {
@@ -45,7 +45,7 @@ const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
     }
 })();
 
-function putPdfInS3(fileName, pdf) {
+function putPdfInS3(pdf, fileName) {
     const putParams = {
         ACL: "public-read",
         Body: pdf,
@@ -53,7 +53,11 @@ function putPdfInS3(fileName, pdf) {
         Key: fileName,
         ContentType: "application/pdf"
     };
-    s3Client.putObject(putParams);
+    s3Client.putObject(putParams, (err, data) => {
+        if (err) {
+            throw err;
+        }
+    });
 }
 
 async function sendMessageToLine(pdfUrl) {
