@@ -28,6 +28,7 @@ const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
     const now = new Date();
     try {
         await page.goto(config.url);
+        await scrollPageToBottom(page);
         const contentHash = await page.evaluate(contentHashPageFunction);
         const newData = {
             ...data,
@@ -37,14 +38,13 @@ const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
             console.log("No update is detected.  Shutdown the task");
             return;
         }
-        await scrollPageToBottom(page);
         const fileName = `${format(now, "yyyy-MM-dd'T'HH:mm:ssa")}.pdf`;
         const pdf = await page.pdf({ format: "a4" });
         const pdfUrl = `https://${config.awsBucketName}.s3.ap-northeast-1.amazonaws.com/${fileName}`;
         putPdfInS3(pdf, fileName);
         await sendMessageToLine(pdfUrl);
         fs.writeFileSync("data.json", JSON.stringify(newData, null, 2));
-        console.log("Update was detected and notified LINE account.");
+        console.log(`Update was detected and notified LINE account. ${pdfUrl}`);
     } catch (err) {
         console.log(err);
     } finally {
@@ -102,13 +102,13 @@ async function contentHashPageFunction() {
         return Array.from(new Uint8Array(digest)).map(v => v.toString(16).padStart(2, "0")).join("")
     }
 
-    const content = document.getElementById("htlCntntArea");
-    if (content !== null) {
-        return sha256(content.outerHTML);
+    const plans = document.querySelectorAll(".htlPlnRmTypLst");
+    if (plans.length === 0) {
+        return sha256("no_plan");
     }
-    const err = document.getElementById("errorAreaWrap")
-    if (err !== null) {
-        return sha256(err.outerHTML);
+    let text = "";
+    for (const plan of plans) {
+        text += plan.outerHTML + "___";
     }
-    throw new Error("This might be not Rakuten Travel site");
+    return sha256(text);
 }
