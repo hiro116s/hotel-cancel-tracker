@@ -30,11 +30,7 @@ const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
         await page.goto(config.url);
         await scrollPageToBottom(page);
         const contentHash = await page.evaluate(contentHashPageFunction);
-        const newData = {
-            ...data,
-            prevContent: contentHash
-        };
-        if (data.prevContent === contentHash) {
+        if (data.prevContentHash === contentHash) {
             console.log("No update is detected.  Shutdown the task");
             return;
         }
@@ -43,7 +39,7 @@ const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
         const pdfUrl = `https://${config.awsBucketName}.s3.ap-northeast-1.amazonaws.com/${fileName}`;
         putPdfInS3(pdf, fileName);
         await sendMessageToLine(pdfUrl);
-        fs.writeFileSync("data.json", JSON.stringify(newData, null, 2));
+        fs.writeFileSync("data.json", JSON.stringify({ prevContentHash: contentHash }, null, 2));
         console.log(`Update was detected and notified LINE account. ${pdfUrl}`);
     } catch (err) {
         console.log(err);
