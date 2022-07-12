@@ -15,6 +15,7 @@
     "date-fns": "^2.28.0",
     "node-fetch": "2.6.7",
     "puppeteer": "^15.3.2",
+    "puppeteer-autoscroll-down": "^1.1.1",
     "uuid": "^8.3.2"
   }
 }

@@ -4,12 +4,17 @@ const format = require("date-fns/format");
 const AWS = require("aws-sdk");
 const fetch = require("node-fetch");
 const { v4: uuidv4 } = require("uuid");
+const { scrollPageToBottom } = require('puppeteer-autoscroll-down')
 
 const s3Client = new AWS.S3();
 
 const puppeteerConfig = {
     // headless: false,
     // slowMo: 250
+};
+const viewport = {
+    width: 1800,
+    height: 1000
 };
 
 const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
@@ -19,6 +24,7 @@ const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
     const browser = await puppeteer.launch(puppeteerConfig);
 
     const page = await browser.newPage();
+    page.setViewport(viewport);
     const now = new Date();
     try {
         await page.goto(config.url);
@@ -31,6 +37,7 @@ const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
             console.log("No update is detected.  Shutdown the task");
             return;
         }
+        await scrollPageToBottom(page);
         const fileName = `${format(now, "yyyy-MM-dd'T'HH:mm:ssa")}.pdf`;
         const pdf = await page.pdf({ format: "a4" });
         const pdfUrl = `https://${config.awsBucketName}.s3.ap-northeast-1.amazonaws.com/${fileName}`;
