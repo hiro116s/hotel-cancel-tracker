@@ -17,8 +17,8 @@ const viewport = {
     height: 1000
 };
 
-const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
-const data = JSON.parse(fs.readFileSync("data.json", "utf8"));
+const config = JSON.parse(fs.readFileSync("resources/config.json", "utf8"));
+const data = JSON.parse(fs.readFileSync("resources/data.json", "utf8"));
 
 (async () => {
     const browser = await puppeteer.launch(puppeteerConfig);
