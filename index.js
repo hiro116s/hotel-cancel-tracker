@@ -5,13 +5,36 @@ const AWS = require("aws-sdk");
 const fetch = require("node-fetch");
 const { v4: uuidv4 } = require("uuid");
 const { scrollPageToBottom } = require('puppeteer-autoscroll-down')
+const yargs = require('yargs');
 
 const s3Client = new AWS.S3();
 
-const puppeteerConfig = {
-    // headless: false,
-    // slowMo: 250
-};
+const argv = require("yargs/yargs")(process.argv.slice(2)).argv;
+
+const puppeteerConfig = createPuppeteerConfig(argv);
+
+function createPuppeteerConfig(argv) {
+    let config = {};
+    if (argv.debug) {
+        config = {
+            ...config,
+            headless: false,
+            slowMo: 250
+        };
+    }
+    if (argv.noSandbox) {
+        config = {
+            ...config,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ]
+        };
+    }
+    console.log(argv);
+    return config;
+}
+
 const viewport = {
     width: 1800,
     height: 1000
@@ -39,7 +62,7 @@ const data = JSON.parse(fs.readFileSync("resources/data.json", "utf8"));
         const pdfUrl = `https://${config.awsBucketName}.s3.ap-northeast-1.amazonaws.com/${fileName}`;
         putPdfInS3(pdf, fileName);
         await sendMessageToLine(pdfUrl);
-        fs.writeFileSync("data.json", JSON.stringify({ prevContentHash: contentHash }, null, 2));
+        fs.writeFileSync("resources/data.json", JSON.stringify({ prevContentHash: contentHash }, null, 2));
         console.log(`Update was detected and notified LINE account. ${pdfUrl}`);
     } catch (err) {
         console.log(err);

@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "debug": "node --inspect-brk index.js",
+    "startInDocker": "node index.js --noSandbox",
+    "debug": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -16,6 +17,7 @@
     "node-fetch": "2.6.7",
     "puppeteer": "^15.3.2",
     "puppeteer-autoscroll-down": "^1.1.1",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "yargs": "^17.5.1"
   }
 }

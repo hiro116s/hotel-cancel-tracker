@@ -18,4 +18,4 @@ RUN yarn install --prod --frozen-lockfile \
     && rm -r /usr/local/share/.cache
 COPY . .
 
-CMD ["npm", "start", "run"]
+CMD ["yarn", "startInDocker"]
