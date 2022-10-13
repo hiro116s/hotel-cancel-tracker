@@ -18,8 +18,7 @@ const data = JSON.parse(fs.readFileSync("resources/data.json", "utf8")) as Data;
 
 const viewport = {
     width: 1800,
-    height: 1000,
-    isMobile: true
+    height: 1000
 };
 
 // https://github.com/puppeteer/puppeteer/issues/1665
@@ -31,7 +30,7 @@ const contentHashPageFunction = `(async() => {
         return Array.from(new Uint8Array(digest)).map(v => v.toString(16).padStart(2, "0")).join("")
     }
 
-    const plans = document.querySelectorAll(".htlPlnRmTypLst");
+    const plans = document.querySelectorAll(".h-sidebar-layout__main");
     if (plans.length === 0) {
         return sha256("no_plan");
     }
