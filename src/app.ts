@@ -18,7 +18,8 @@ const data = JSON.parse(fs.readFileSync("resources/data.json", "utf8")) as Data;
 
 const viewport = {
     width: 1800,
-    height: 1000
+    height: 1000,
+    isMobile: true
 };
 
 // https://github.com/puppeteer/puppeteer/issues/1665
