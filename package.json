@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node dist/app.js",
     "startInDocker": "node dist/app.js --noSandbox",
+    "build": "yarn tsc",
     "watch": "yarn tsc -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
