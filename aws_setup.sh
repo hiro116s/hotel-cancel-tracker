@@ -12,12 +12,19 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 nvm install node
 
+# Install yarn
+curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+sudo apt update
+sudo apt install yarn -y
+
 # Build project
 echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 git clone git@github.com:hiro116s/hotel-cancel-tracker.git
 cd hotel-cancel-tracker
-npm install
+yarn install
+yarn run build
 sed -e "s|CHANNEL_ACCESS_TOKEN|<<copy_your_channel_coken>>|g" -i config.json
 
 # Run task
-npm start run
+yarn run start
